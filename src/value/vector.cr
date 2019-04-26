@@ -58,9 +58,9 @@ module Clin::Value
     #   "#{typeof(self)}#{@buffer}"
     # end
 
-    # def inspect(io)
-    #   io << to_s
-    # end
+    def inspect(io)
+      io << to_s
+    end
 
     # abstract def transpose : Vector
     # abstract def *(other : Vector)
@@ -71,8 +71,12 @@ module Clin::Value
   class ColumnVector(T, N) < Vector(T, N)
     implement_vector_initializer ColumnVector
 
+    def to_s
+      str = "#{typeof(self)}[\n"
       N.times do |i|
+        str += "  #{self[i]}#{i + 1 == N ? "" : ","}\n"
       end
+      str += "]"
     end
 
     # def transpose : Vector
@@ -94,6 +98,14 @@ module Clin::Value
 
   class RowVector(T, N) < Vector(T, N)
     implement_vector_initializer RowVector
+
+    def to_s
+      str = "#{typeof(self)}[\n  "
+      N.times do |i|
+        str += "#{self[i]}#{i + 1 == N ? "" : ", "}"
+      end
+      str += "\n]"
+    end
 
     # def transpose : Vector
     #   ColumnVector.new(value)
