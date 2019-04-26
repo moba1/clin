@@ -1,5 +1,15 @@
 require "../error"
 
+macro implement_vector_initializer(vec_type)
+  macro [](*args)
+    %array = Clin::Value::{{vec_type}}(typeof(\{\{*args}}), \{\{args.size}}).new
+    \{% for arg, i in args %}
+      %array[\{\{i}}] = \{\{arg}}
+    \{% end %}
+    %array
+  end
+end
+
 module Clin::Value
   abstract class Vector(T, N)
     include Indexable(T)
@@ -59,6 +69,7 @@ module Clin::Value
   end
 
   class ColumnVector(T, N) < Vector(T, N)
+    implement_vector_initializer ColumnVector
 
       N.times do |i|
       end
@@ -82,6 +93,7 @@ module Clin::Value
   end
 
   class RowVector(T, N) < Vector(T, N)
+    implement_vector_initializer RowVector
 
     # def transpose : Vector
     #   ColumnVector.new(value)
