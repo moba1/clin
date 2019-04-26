@@ -2,6 +2,8 @@ require "../error"
 
 module Clin::Value
   module Vector(T, N)
+    include Indexable(T)
+
     def initialize
       @buffer = Pointer(T).malloc(N)
     end
@@ -10,9 +12,16 @@ module Clin::Value
       @buffer[index]
     end
 
-    # def +(other : V)
-    #   rhs = 
-    #   V.new(value.map_with_index {|x, i| x + rhs[i]})
+    def []=(index : Int, value : T)
+      @buffer[index] = value
+    end
+
+    def size
+      N
+    end
+
+    # def +(other : self)
+    #   self.map_with_index {|x, i| x + other[i]}
     # end
 
     # def +
@@ -24,7 +33,7 @@ module Clin::Value
     # end
 
     # def to_s
-    #   "#{typeof(self)}#{value.to_a}"
+    #   "#{typeof(self)}#{@buffer}"
     # end
 
     # def inspect(io)
@@ -39,6 +48,18 @@ module Clin::Value
 
   class ColumnVector(T, N)
     include Vector(T, N)
+
+    def self.new(&block : Int32 -> T)
+      cvec = self.new
+      N.times do |i|
+        cvec[i] = yield i
+      end
+      cvec
+    end
+
+    def self.new(array : Array(T))
+      self.new {|i| array[i] }
+    end
 
     # def transpose : Vector
     #   RowVector.new(value)
@@ -58,7 +79,7 @@ module Clin::Value
   end
 
   class RowVector(T, N)
-    # include Vector(RowVector, T, N)
+    include Vector(T, N)
 
     # def transpose : Vector
     #   ColumnVector.new(value)
