@@ -1,7 +1,7 @@
 require "../error"
 
 module Clin::Value
-  module Vector(T, N)
+  abstract class Vector(T, N)
     include Indexable(T)
 
     def initialize
@@ -18,6 +18,18 @@ module Clin::Value
 
     def size
       N
+    end
+
+    def self.new(&block : Int32 -> T)
+      cvec = self.new
+      N.times do |i|
+        cvec[i] = yield i
+      end
+      cvec
+    end
+
+    def self.new(array : Array(T))
+      self.new {|i| array[i] }
     end
 
     # def +(other : self)
@@ -46,19 +58,10 @@ module Clin::Value
     # abstract def /(other : Number)
   end
 
-  class ColumnVector(T, N)
-    include Vector(T, N)
+  class ColumnVector(T, N) < Vector(T, N)
 
-    def self.new(&block : Int32 -> T)
-      cvec = self.new
       N.times do |i|
-        cvec[i] = yield i
       end
-      cvec
-    end
-
-    def self.new(array : Array(T))
-      self.new {|i| array[i] }
     end
 
     # def transpose : Vector
@@ -78,8 +81,7 @@ module Clin::Value
     # end
   end
 
-  class RowVector(T, N)
-    include Vector(T, N)
+  class RowVector(T, N) < Vector(T, N)
 
     # def transpose : Vector
     #   ColumnVector.new(value)
