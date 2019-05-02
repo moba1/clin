@@ -84,6 +84,8 @@ module Clin::Value
   {% begin %}
     {% for klass in %w(ColumnVector RowVector) %}
       struct {{klass.id}}(T)
+        include Comparable({{klass.id}})
+
         macro [](*args)
           %array = Clin::Value::{{klass.id}}.new(\{\{args}}.to_a)
         end
@@ -115,6 +117,37 @@ module Clin::Value
         def -(other : {{klass.id}}(U)) forall U
           other = -other
           self + other
+        end
+
+        def <=>(other : {{klass.id}}(U)) forall U
+          comps = 0
+          dim.times do |i|
+            comp_res = self[i] <=> other[i]
+            case comp_res
+            when Nil
+              return nil
+            else
+              comps |=
+                if comp_res > 0
+                  0x01
+                elsif comp_res < 0
+                  0x02
+                else
+                  0x04
+                end
+            end
+          end
+
+          case comps
+          when 0x07, 0x03
+            nil
+          when 0x05, 0x01
+            1
+          when 0x02, 0x06
+            -1
+          when 0x04
+            0
+          end
         end
       end
     {% end %}
