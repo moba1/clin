@@ -5,7 +5,7 @@ module Clin::Value
   module Vector(T)
     include Indexable(T)
 
-    @dim : Int32
+    getter dim : Int32
 
     def initialize(array : Array(T))
       @dim = array.size
@@ -21,10 +21,6 @@ module Clin::Value
     end
 
     def size
-      @dim
-    end
-
-    def dim
       @dim
     end
 
