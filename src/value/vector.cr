@@ -67,6 +67,18 @@ module Clin::Value
     def transpose
       ColumnVector.new(self.to_a)
     end
+
+    def *(other : ColumnVector)
+      if other.dim != dim
+        raise Clin::Error::DimensionError.new(dim, other.dim)
+      end
+
+      res = 0
+      dim.times do |i|
+        res += other[i] * self[i]
+      end
+      res
+    end
   end
 
   {% begin %}
