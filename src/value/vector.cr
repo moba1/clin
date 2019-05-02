@@ -2,7 +2,7 @@ require "big"
 require "../error"
 
 module Clin::Value
-  module Vector(T)
+  abstract struct Vector(T)
     include Indexable(T)
 
     getter dim : Int32
@@ -31,11 +31,17 @@ module Clin::Value
     def inspect(io)
       io << to_s
     end
+
+    abstract def transpose
+    abstract def *(other)
+    abstract def +(other)
+    abstract def -(other)
+    abstract def /(other)
+    abstract def +
+    abstract def -
   end
 
-  struct ColumnVector(T)
-    include Vector(T)
-
+  struct ColumnVector(T) < Vector(T)
     def to_s
       str = "#{typeof(self)}[\n"
       @dim.times do |i|
@@ -49,9 +55,7 @@ module Clin::Value
     end
   end
 
-  struct RowVector(T)
-    include Vector(T)
-
+  struct RowVector(T) < Vector(T)
     def to_s
       str = "#{typeof(self)}[\n  "
       @dim.times do |i|
