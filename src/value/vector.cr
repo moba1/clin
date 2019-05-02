@@ -1,4 +1,5 @@
 require "big"
+require "../error"
 
 module Clin::Value
   module Vector(T)
@@ -89,7 +90,7 @@ module Clin::Value
 
         def +(other : {{klass.id}}(U)) forall U
           if other.dim != @dim
-            raise "Dimension Error: dim(#{@dim}) + dim(#{other.dim})"
+            raise Clin::Error::DimensionError.new(dim, other.dim)
           end
 
           new_values = [] of T | U
