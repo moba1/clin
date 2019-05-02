@@ -1,127 +1,146 @@
-require "../error"
-
-macro implement_vector_initializer(vec_type)
-  macro [](*args)
-    %array = Clin::Value::{{vec_type}}(typeof(\{\{*args}}), \{\{args.size}}).new
-    \{% for arg, i in args %}
-      %array[\{\{i}}] = \{\{arg}}
-    \{% end %}
-    %array
-  end
-end
+require "big"
 
 module Clin::Value
-  abstract class Vector(T, N)
+  module Vector(T)
     include Indexable(T)
 
-    def initialize
-      @buffer = Pointer(T).malloc(N)
+    @dim : Int32
+
+    def initialize(array : Array(T))
+      @dim = array.size
+      @buffer = Pointer(T).malloc(@dim)
+
+      @dim.times do |i|
+        @buffer[i] = array[i]
+      end
     end
 
     def unsafe_fetch(index : Int)
       @buffer[index]
     end
 
+    def size
+      @dim
+    end
+
+    def dim
+      @dim
+    end
+
     def []=(index : Int, value : T)
       @buffer[index] = value
     end
 
-    def size
-      N
-    end
-
-    def self.new(&block : Int32 -> T)
-      cvec = self.new
-      N.times do |i|
-        cvec[i] = yield i
-      end
-      cvec
-    end
-
-    def self.new(array : Array(T))
-      self.new {|i| array[i] }
-    end
-
-    # def +(other : self)
-    #   self.map_with_index {|x, i| x + other[i]}
-    # end
-
-    # def +
-    #   V.new value
-    # end
-
-    # def -
-    #   typeof(self).new value.map {|x| -x}
-    # end
-
-    # def to_s
-    #   "#{typeof(self)}#{@buffer}"
-    # end
-
     def inspect(io)
       io << to_s
     end
-
-    # abstract def transpose : Vector
-    # abstract def *(other : Vector)
-    # abstract def *(other : Number)
-    # abstract def /(other : Number)
   end
 
-  class ColumnVector(T, N) < Vector(T, N)
-    implement_vector_initializer ColumnVector
+  struct ColumnVector(T)
+    include Vector(T)
 
     def to_s
       str = "#{typeof(self)}[\n"
-      N.times do |i|
-        str += "  #{self[i]}#{i + 1 == N ? "" : ","}\n"
+      @dim.times do |i|
+        str += "  #{self[i]}#{i + 1 == @dim ? "" : ","}\n"
       end
       str += "]"
     end
 
-    # def transpose : Vector
-    #   RowVector.new(value)
-    # end
-
-    # def *(other : RowVector(T, N))
-    #   # TODO
-    # end
-
-    # def *(other : Number)
-    #   ColumnVector.new(value.map {|x| x * other})
-    # end
-
-    # def /(other : Number)
-    #   ColumnVector.new(value.map {|x| x / other})
-    # end
+    def transpose
+      RowVector.new(self.to_a)
+    end
   end
 
-  class RowVector(T, N) < Vector(T, N)
-    implement_vector_initializer RowVector
+  struct RowVector(T)
+    include Vector(T)
 
     def to_s
       str = "#{typeof(self)}[\n  "
-      N.times do |i|
-        str += "#{self[i]}#{i + 1 == N ? "" : ", "}"
+      @dim.times do |i|
+        str += "#{self[i]}#{i + 1 == @dim ? "" : ", "}"
       end
       str += "\n]"
     end
 
-    # def transpose : Vector
-    #   ColumnVector.new(value)
-    # end
-
-    # def *(other : ColumnVector(T, N))
-    #   rhs = other.value
-    #   other.value.map_with_index {|x, i| x * rhs[i]}.reduce(0) {|acc, i| acc + i}
-    # end
-
-    # def *(other : Number)
-    #   RowVector.new(value.map {|x| x * other})
-    # end
-
-    # def /(other : Number)
-    #   RowVector.new(value.map {|x| x / other})
-    # end
+    def transpose
+      ColumnVector.new(self.to_a)
+    end
   end
+
+  {% begin %}
+    {% for klass in %w(ColumnVector RowVector) %}
+      struct {{klass.id}}(T)
+        macro [](*args)
+          %array = Clin::Value::{{klass.id}}.new(\{\{args}}.to_a)
+        end
+
+        def +
+          {{klass.id}}.new(self.to_a)
+        end
+
+        def -
+          new_vec = {{klass.id}}.new(self.to_a)
+          new_vec.dim.times do |i|
+            new_vec[i] = -new_vec[i]
+          end
+          new_vec
+        end
+
+        def +(other : {{klass.id}}(U)) forall U
+          if other.dim != @dim
+            raise "Dimension Error: dim(#{@dim}) + dim(#{other.dim})"
+          end
+
+          new_values = [] of T | U
+          @dim.times do |i|
+            new_values << self[i] + other[i]
+          end
+          {{klass.id}}.new(new_values)
+        end
+
+        def -(other : {{klass.id}}(U)) forall U
+          other = -other
+          self + other
+        end
+      end
+    {% end %}
+  {% end %}
 end
+
+{% begin %}
+    {% nums = %w(Int8 Int16 Int32 Int64 Int128 UInt8 UInt16 UInt32 UInt64 UInt128 Float32 Float64 BigFloat BigInt BigRational BigDecimal) %}
+    {% for num in nums %}
+      {% for klass in %w(Clin::Value::ColumnVector Clin::Value::RowVector) %}
+        struct {{num.id}}
+          def *(other : {{klass.id}}(T)) forall T
+            new_values = [] of T | self
+            other.dim.times do |i|
+              new_values << self * other[i]
+            end
+            {{klass.id}}.new(new_values)
+          end
+        end
+
+        struct {{klass.id}}(T)
+          def *(other : {{num.id}})
+            new_values = [] of T | {{num.id}}
+            self.dim.times do |i|
+              new_values << self[i] * other
+            end
+            {{klass.id}}.new(new_values)
+          end
+        end
+
+        struct {{klass.id}}(T)
+          def /(other : {{num.id}})
+            new_values = [] of T | {{num.id}}
+            self.dim.times do |i|
+              new_values << self[i] / other
+            end
+            {{klass.id}}.new(new_values)
+          end
+        end
+      {% end %}
+    {% end %}
+  {% end %}
