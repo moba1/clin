@@ -155,38 +155,38 @@ module Clin::Value
 end
 
 {% begin %}
-    {% nums = %w(Int8 Int16 Int32 Int64 Int128 UInt8 UInt16 UInt32 UInt64 UInt128 Float32 Float64 BigFloat BigInt BigRational BigDecimal) %}
-    {% for num in nums %}
-      {% for klass in %w(Clin::Value::ColumnVector Clin::Value::RowVector) %}
-        struct {{num.id}}
-          def *(other : {{klass.id}}(T)) forall T
-            new_values = [] of T | self
-            other.dim.times do |i|
-              new_values << self * other[i]
-            end
-            {{klass.id}}.new(new_values)
+  {% nums = %w(Int8 Int16 Int32 Int64 Int128 UInt8 UInt16 UInt32 UInt64 UInt128 Float32 Float64 BigFloat BigInt BigRational BigDecimal) %}
+  {% for num in nums %}
+    {% for klass in %w(Clin::Value::ColumnVector Clin::Value::RowVector) %}
+      struct {{num.id}}
+        def *(other : {{klass.id}}(T)) forall T
+          new_values = [] of T | self
+          other.dim.times do |i|
+            new_values << self * other[i]
           end
+          {{klass.id}}.new(new_values)
         end
+      end
 
-        struct {{klass.id}}(T)
-          def *(other : {{num.id}})
-            new_values = [] of T | {{num.id}}
-            self.dim.times do |i|
-              new_values << self[i] * other
-            end
-            {{klass.id}}.new(new_values)
+      struct {{klass.id}}(T)
+        def *(other : {{num.id}})
+          new_values = [] of T | {{num.id}}
+          self.dim.times do |i|
+            new_values << self[i] * other
           end
+          {{klass.id}}.new(new_values)
         end
+      end
 
-        struct {{klass.id}}(T)
-          def /(other : {{num.id}})
-            new_values = [] of T | {{num.id}}
-            self.dim.times do |i|
-              new_values << self[i] / other
-            end
-            {{klass.id}}.new(new_values)
+      struct {{klass.id}}(T)
+        def /(other : {{num.id}})
+          new_values = [] of T | {{num.id}}
+          self.dim.times do |i|
+            new_values << self[i] / other
           end
+          {{klass.id}}.new(new_values)
         end
-      {% end %}
+      end
     {% end %}
   {% end %}
+{% end %}
