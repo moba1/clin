@@ -2,7 +2,7 @@ require "big"
 require "../error"
 
 module Clin::Value
-  abstract struct Vector(T)
+  abstract class Vector(T)
     include Indexable(T)
 
     getter dim : Int32
@@ -41,7 +41,7 @@ module Clin::Value
     abstract def -
   end
 
-  struct ColumnVector(T) < Vector(T)
+  class ColumnVector(T) < Vector(T)
     def to_s
       str = "#{typeof(self)}[\n"
       @dim.times do |i|
@@ -55,7 +55,7 @@ module Clin::Value
     end
   end
 
-  struct RowVector(T) < Vector(T)
+  class RowVector(T) < Vector(T)
     def to_s
       str = "#{typeof(self)}[\n  "
       @dim.times do |i|
@@ -83,7 +83,7 @@ module Clin::Value
 
   {% begin %}
     {% for klass in %w(ColumnVector RowVector) %}
-      struct {{klass.id}}(T)
+      class {{klass.id}}(T)
         include Comparable({{klass.id}})
 
         macro [](*args)
@@ -168,7 +168,7 @@ end
         end
       end
 
-      struct {{klass.id}}(T)
+      class {{klass.id}}(T)
         def *(other : {{num.id}})
           new_values = [] of T | {{num.id}}
           self.dim.times do |i|
@@ -178,7 +178,7 @@ end
         end
       end
 
-      struct {{klass.id}}(T)
+      class {{klass.id}}(T)
         def /(other : {{num.id}})
           new_values = [] of T | {{num.id}}
           self.dim.times do |i|
