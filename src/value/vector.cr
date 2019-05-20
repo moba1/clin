@@ -87,7 +87,7 @@ module Clin::Value
         include Comparable({{klass.id}})
 
         macro [](*args)
-          %array = Clin::Value::{{klass.id}}.new(\{\{args}}.to_a)
+          Clin::Value::{{klass.id}}.new(\{\{args}}.to_a)
         end
 
         def +

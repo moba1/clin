@@ -36,6 +36,10 @@ module Clin::Value
       self.new(m, n, val)
     end
 
+    macro [](*args)
+      Clin::Value::DenseMatrix.new({{args}}.to_a)
+    end
+
     def [](key : {Int, Int}) : T
       validate_index(@m, @n, key)
 
