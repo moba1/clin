@@ -102,22 +102,19 @@ module Clin::Value
           new_vec
         end
 
-        macro impl_linear_op(klass)
-          \{% for op, i in \%w(+ -) %}
-            def \{\{op.id}}(other : \{\{klass.id}}(U)) forall U
-              if other.dim != @dim
-                raise Clin::Error::DimensionError.new(dim, other.dim)
-              end
-              
-              new_values = [] of T | U
-              @dim.times do |i|
-                new_values << self[i] \{\{op.id}} other[i]
-              end
-              \{\{klass.id}}.new(new_values)
+        {% for op, i in %w(+ -) %}
+          def {{op.id}}(other : {{klass.id}}(U)) forall U
+            if other.dim != @dim
+              raise Clin::Error::DimensionError.new(dim, other.dim)
             end
-          \{% end %}
-        end
-        impl_linear_op({{klass.id}})
+
+            new_values = [] of T | U
+            @dim.times do |i|
+              new_values << self[i] {{op.id}} other[i]
+            end
+            {{klass.id}}.new(new_values)
+          end
+        {% end %}
 
         def <=>(other : {{klass.id}}(U)) forall U
           comps = 0
